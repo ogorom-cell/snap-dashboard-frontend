@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snapchat Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --snap-yellow: #FFFC00;
+    --snap-yellow-dark: #e6e300;
+    --bg: #f7f7f8;
+    --sidebar-bg: #111111;
+    --sidebar-text: #b0b0b0;
+    --sidebar-active: #FFFC00;
+    --card-bg: #ffffff;
+    --border: #e8e8e8;
+    --text-primary: #111111;
+    --text-secondary: #666666;
+    --text-muted: #999999;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+  }
+
+  /* ── LOGIN PAGE ── */
+  #login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #111;
+  }
+  .login-box {
+    background: #1a1a1a;
+    border-radius: 20px;
+    padding: 48px 40px;
+    text-align: center;
+    width: 380px;
+    border: 1px solid #2a2a2a;
+  }
+  .login-ghost {
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
+  .login-box h1 {
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .login-box p {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 32px;
+  }
+  .btn-snap-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--snap-yellow);
+    color: #111;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px 28px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-snap-login:hover { background: var(--snap-yellow-dark); transform: translateY(-1px); }
+  .btn-snap-login:active { transform: translateY(0); }
+  .login-note {
+    margin-top: 20px;
+    color: #555;
+    font-size: 12px;
+  }
+
+  /* ── LAYOUT ── */
+  #app { display: none; }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 220px;
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    transition: width 0.2s;
+  }
+  .sidebar-header {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid #222;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sidebar-logo { font-size: 28px; }
+  .sidebar-brand { color: #fff; font-size: 15px; font-weight: 700; line-height: 1.2; }
+  .sidebar-brand span { color: var(--snap-yellow); }
+  .sidebar-brand small { display: block; color: #666; font-size: 11px; font-weight: 400; }
+
+  .profile-switcher {
+    margin: 14px 12px;
+    background: #1e1e1e;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .profile-avatar {
+    width: 30px; height: 30px;
+    background: var(--snap-yellow);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #111;
+    flex-shrink: 0;
+  }
+  .profile-name { color: #ddd; font-size: 12px; font-weight: 600; }
+  .profile-handle { color: #666; font-size: 11px; }
+  .profile-chevron { margin-left: auto; color: #555; font-size: 12px; }
+
+  nav { flex: 1; padding: 8px 0; }
+  .nav-section { padding: 10px 12px 4px; color: #444; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    margin: 1px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--sidebar-text);
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+  }
+  .nav-item:hover { background: #1e1e1e; color: #ddd; }
+  .nav-item.active { background: #1f1f00; color: var(--snap-yellow); font-weight: 600; }
+  .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--snap-yellow);
+    color: #111;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+  }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid #222;
+  }
+  .user-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    background: #1a1a1a;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .user-avatar {
+    width: 28px; height: 28px;
+    background: #333;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+  }
+  .user-name { color: #ccc; font-size: 12px; font-weight: 500; }
+  .user-email { color: #555; font-size: 11px; }
+  .logout-btn { margin-left: auto; color: #555; font-size: 11px; cursor: pointer; }
+  .logout-btn:hover { color: #ef4444; }
+
+  /* ── MAIN CONTENT ── */
+  .main { margin-left: 220px; min-height: 100vh; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .date-range-tabs {
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .date-tab {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border: none;
+    background: transparent;
+    transition: all 0.15s;
+  }
+  .date-tab.active {
+    background: var(--snap-yellow);
+    color: #111;
+  }
+  .btn-primary {
+    background: var(--snap-yellow);
+    color: #111;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--snap-yellow-dark); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { background: var(--bg); }
+
+  .page-content { padding: 24px 28px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .kpi-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.15s;
+  }
+  .kpi-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+  .kpi-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .kpi-value { font-size: 22px; font-weight: 800; color: var(--text-primary); margin-bottom: 6px; line-height: 1; }
+  .kpi-change {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 11px; font-weight: 600;
+    padding: 2px 7px; border-radius: 20px;
+  }
+  .kpi-change.up { color: var(--green); background: #f0fdf4; }
+  .kpi-change.down { color: var(--red); background: #fef2f2; }
+  .kpi-icon {
+    position: absolute;
+    top: 14px; right: 14px;
+    font-size: 20px;
+    opacity: 0.15;
+  }
+  .kpi-sparkline { margin-top: 10px; height: 32px; }
+
+  /* ── CHARTS GRID ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .chart-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .chart-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .chart-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+  .chart-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .chart-container { position: relative; }
+
+  /* ── DONUT LEGEND ── */
+  .donut-layout { display: flex; align-items: center; gap: 20px; }
+  .donut-chart-wrap { flex: 1; max-width: 180px; }
+  .donut-legend { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { font-size: 12px; color: var(--text-secondary); }
+  .legend-value { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--text-primary); }
+
+  /* ── TOP CONTENT TABLE ── */
+  .table-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .table-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-header-title { font-size: 14px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left;
+    padding: 10px 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: #fafafa;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid #f5f5f5; transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fafafa; }
+  tbody td { padding: 12px 20px; font-size: 13px; color: var(--text-primary); }
+  .content-thumb {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    background: #f0f0f0;
+    border: 1px solid var(--border);
+  }
+  .content-cell { display: flex; align-items: center; gap: 10px; }
+  .content-info-title { font-size: 13px; font-weight: 600; }
+  .content-info-date { font-size: 11px; color: var(--text-muted); }
+  .type-badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .type-story { background: #fef9c3; color: #854d0e; }
+  .type-spotlight { background: #e0e7ff; color: #3730a3; }
+  .type-saved { background: #d1fae5; color: #065f46; }
+  .rank-num { font-size: 13px; font-weight: 800; color: var(--text-muted); width: 24px; }
+  .stat-cell { font-weight: 700; }
+  .stat-sub { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+  .bar-mini {
+    height: 4px; border-radius: 2px;
+    background: #f0f0f0;
+    margin-top: 4px;
+  }
+  .bar-mini-fill { height: 100%; border-radius: 2px; background: var(--snap-yellow); }
+
+  /* ── CONTENT PAGE ── */
+  .content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .content-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .content-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .content-card-thumb {
+    width: 100%;
+    aspect-ratio: 9/16;
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .content-card-thumb-overlay {
+    position: absolute; bottom: 8px; left: 8px;
+    display: flex; gap: 4px;
+  }
+  .content-card-stat {
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 20px;
+    display: flex; align-items: center; gap: 3px;
+    backdrop-filter: blur(4px);
+  }
+  .content-card-body { padding: 12px; }
+  .content-card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .content-card-meta { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+
+  /* ── SCHEDULE PAGE ── */
+  .schedule-layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+  .schedule-form-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .form-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+  .form-input:focus { border-color: var(--snap-yellow); background: #fff; }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #fafafa;
+  }
+  .upload-zone:hover { border-color: var(--snap-yellow); background: #fffef0; }
+  .upload-icon { font-size: 36px; margin-bottom: 10px; }
+  .upload-text { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .upload-hint { font-size: 12px; color: var(--text-muted); }
+  .post-type-selector { display: flex; gap: 8px; }
+  .type-btn {
+    flex: 1; padding: 10px; text-align: center;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: #fff;
+    transition: all 0.15s;
+  }
+  .type-btn.active { border-color: var(--snap-yellow); background: #fffef0; color: #111; }
+  .type-btn-icon { font-size: 20px; margin-bottom: 4px; }
+  .char-count { float: right; font-size: 11px; color: var(--text-muted); }
+
+  /* Mobile preview */
+  .mobile-preview {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .phone-frame {
+    width: 180px;
+    height: 320px;
+    background: #111;
+    border-radius: 28px;
+    border: 6px solid #222;
+    overflow: hidden;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    background: linear-gradient(160deg, #1a1a2e 0%, #ff6b6b 50%, #ffd700 100%);
+    display: flex; align-items: flex-end; justify-content: flex-start;
+    padding: 16px 12px;
+    position: relative;
+  }
+  .phone-caption {
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+  .phone-ghost {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -60%);
+    font-size: 40px; opacity: 0.3;
+  }
+  .phone-notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 60px; height: 10px; background: #111; border-radius: 0 0 8px 8px; z-index: 10;
+  }
+
+  /* Scheduled Queue */
+  .queue-list { display: flex; flex-direction: column; gap: 12px; }
+  .queue-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: box-shadow 0.15s;
+  }
+  .queue-item:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.06); }
+  .queue-thumb {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: #111;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .queue-info { flex: 1; }
+  .queue-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .queue-meta { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+  .queue-time {
+    background: #f5f5f5;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .queue-time small { display: block; font-size: 10px; color: var(--text-muted); font-weight: 400; }
+  .queue-cancel {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .queue-cancel:hover { background: #fef2f2; border-color: #fca5a5; color: var(--red); }
+
+  /* Settings */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .settings-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .settings-card-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { font-size: 13px; font-weight: 500; }
+  .settings-value { font-size: 13px; color: var(--text-muted); }
+  .toggle {
+    width: 36px; height: 20px;
+    background: #ddd; border-radius: 10px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .toggle.on { background: var(--snap-yellow); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    top: 2px; left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { transform: translateX(16px); }
+  .team-member {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .team-member:last-child { border-bottom: none; }
+  .team-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--snap-yellow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #111;
+  }
+  .team-name { font-size: 13px; font-weight: 600; }
+  .team-role { font-size: 11px; color: var(--text-muted); }
+  .team-status {
+    margin-left: auto;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 20px;
+  }
+  .status-admin { background: #fef9c3; color: #854d0e; }
+  .status-member { background: #e0e7ff; color: #3730a3; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #bbb; }
+
+  /* Tooltip */
+  .tooltip {
+    position: relative;
+  }
+  .tooltip::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111;
+    color: #fff;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+  .tooltip:hover::after { opacity: 1; }
+
+  @media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 900px) {
+    .sidebar { width: 60px; }
+    .sidebar-brand, .nav-item span, .profile-name, .profile-handle, .profile-chevron,
+    .nav-section, .nav-badge, .user-name, .user-email, .logout-btn { display: none; }
+    .main { margin-left: 60px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-row, .settings-grid { grid-template-columns: 1fr; }
+    .schedule-layout { grid-template-columns: 1fr; }
+    .mobile-preview { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-ghost">👻</div>
+    <h1>Snapchat Dashboard</h1>
+    <p>Analytics & Content Management for your Public Profile</p>
+    <button class="btn-snap-login" onclick="doLogin()">
+      <span>👻</span> Log in with Snapchat
+    </button>
+    <p class="login-note">Requires Snapchat Marketing API access</p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">👻</div>
+        <div class="sidebar-brand">
+          <span>Snap</span> Dashboard
+          <small>Analytics & Content</small>
+        </div>
+      </div>
+
+      <div class="profile-switcher" onclick="alert('Profile switcher — connect multiple profiles')">
+        <div class="profile-avatar">O</div>
+        <div>
+          <div class="profile-name">Official Channel</div>
+          <div class="profile-handle">@olivia_snap</div>
+        </div>
+        <div class="profile-chevron">▾</div>
+      </div>
+
+      <nav>
+        <div class="nav-section">Analytics</div>
+        <div class="nav-item active" onclick="navigate('dashboard', this)">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </div>
+        <div class="nav-item" onclick="navigate('content', this)">
+          <span class="nav-icon">🎬</span>
+          <span>Content Library</span>
+        </div>
+
+        <div class="nav-section">Publishing</div>
+        <div class="nav-item" onclick="navigate('schedule', this)">
+          <span class="nav-icon">✏️</span>
+          <span>Create Post</span>
+        </div>
+        <div class="nav-item" onclick="navigate('scheduled', this)">
+          <span class="nav-icon">🗓️</span>
+          <span>Scheduled Queue</span>
+          <span class="nav-badge">4</span>
+        </div>
+
+        <div class="nav-section">Account</div>
+        <div class="nav-item" onclick="navigate('settings', this)">
+          <span class="nav-icon">⚙️</span>
+          <span>Settings</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <div class="user-avatar">👤</div>
+          <div>
+            <div class="user-name">Olivia</div>
+            <div class="user-email">livgorom@gmail.com</div>
+          </div>
+          <div class="logout-btn" onclick="doLogout()">Sign out</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- TOP BAR -->
+      <div class="topbar">
+        <div class="topbar-title" id="topbar-title">📊 Dashboard</div>
+        <div class="topbar-actions">
+          <div class="date-range-tabs" id="date-range-tabs">
+            <button class="date-tab active" onclick="setRange(7, this)">7D</button>
+            <button class="date-tab" onclick="setRange(30, this)">30D</button>
+            <button class="date-tab" onclick="setRange(90, this)">90D</button>
+          </div>
+          <button class="btn-primary" onclick="navigate('schedule', document.querySelector('.nav-item:nth-child(6)'))">
+            + New Post
+          </button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD PAGE -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-content">
+
+          <!-- KPI CARDS -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-icon">👥</div>
+              <div class="kpi-label">Subscribers</div>
+              <div class="kpi-value" id="kpi-subs">248.4K</div>
+              <span class="kpi-change up">↑ 12.4%</span>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon">👁️</div>
+              <div class="kpi-label">Story Views</div>
+              <div class="kpi-value" id="kpi-views">1.82M</div>
+              <span class="kpi-change up">↑ 8.7%</span>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon">⏱️</div>
+              <div class="kpi-label">Avg View Time</div>
+              <div class="kpi-value" id="kpi-time">4.2s</div>
+              <span class="kpi-change down">↓ 2.1%</span>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon">👆</div>
+              <div class="kpi-label">Swipe-Ups</div>
+              <div class="kpi-value" id="kpi-swipe">34.1K</div>
+              <span class="kpi-change up">↑ 21.3%</span>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon">📤</div>
+              <div class="kpi-label">Shares</div>
+              <div class="kpi-value" id="kpi-shares">12.8K</div>
+              <span class="kpi-change up">↑ 5.6%</span>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon">💬</div>
+              <div class="kpi-label">Replies</div>
+              <div class="kpi-value" id="kpi-replies">6.3K</div>
+              <span class="kpi-change up">↑ 18.9%</span>
+            </div>
+          </div>
+
+          <!-- MAIN CHARTS -->
+          <div class="charts-grid">
+            <!-- Line Chart -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <div>
+                  <div class="chart-title">Views Over Time</div>
+                  <div class="chart-subtitle" id="views-subtitle">Daily story views · last 7 days</div>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="viewsChart" height="220"></canvas>
+              </div>
+            </div>
+
+            <!-- Donut Chart -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <div>
+                  <div class="chart-title">Audience Age</div>
+                  <div class="chart-subtitle">Age & gender breakdown</div>
+                </div>
+              </div>
+              <div class="donut-layout" style="margin-top:8px">
+                <div class="donut-chart-wrap">
+                  <canvas id="ageChart" height="160"></canvas>
+                </div>
+                <div class="donut-legend">
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#FFFC00"></div>
+                    <div class="legend-label">13–17</div>
+                    <div class="legend-value">18%</div>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#FFC107"></div>
+                    <div class="legend-label">18–24</div>
+                    <div class="legend-value">41%</div>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#FF9800"></div>
+                    <div class="legend-label">25–34</div>
+                    <div class="legend-value">28%</div>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#FF5722"></div>
+                    <div class="legend-label">35–44</div>
+                    <div class="legend-value">9%</div>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-dot" style="background:#E91E63"></div>
+                    <div class="legend-label">45+</div>
+                    <div class="legend-value">4%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECOND ROW -->
+          <div class="charts-row">
+            <!-- Bar Chart -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <div>
+                  <div class="chart-title">Views by Content Type</div>
+                  <div class="chart-subtitle">Stories vs Spotlight vs Saved Stories</div>
+                </div>
+              </div>
+              <canvas id="typeChart" height="200"></canvas>
+            </div>
+
+            <!-- Top Locations -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <div>
+                  <div class="chart-title">Top Viewer Locations</div>
+                  <div class="chart-subtitle">Countries by view count</div>
+                </div>
+              </div>
+              <div style="margin-top: 8px;">
+                <div style="display:flex; flex-direction:column; gap: 10px;">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                      <span style="font-size:13px; font-weight:600;">🇺🇸 United States</span>
+                      <span style="font-size:13px; color:var(--text-muted);">682K</span>
+                    </div>
+                    <div class="bar-mini"><div class="bar-mini-fill" style="width:100%"></div></div>
+                  </div>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                      <span style="font-size:13px; font-weight:600;">🇬🇧 United Kingdom</span>
+                      <span style="font-size:13px; color:var(--text-muted);">241K</span>
+                    </div>
+                    <div class="bar-mini"><div class="bar-mini-fill" style="width:35%"></div></div>
+                  </div>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                      <span style="font-size:13px; font-weight:600;">🇨🇦 Canada</span>
+                      <span style="font-size:13px; color:var(--text-muted);">198K</span>
+                    </div>
+                    <div class="bar-mini"><div class="bar-mini-fill" style="width:29%"></div></div>
+                  </div>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                      <span style="font-size:13px; font-weight:600;">🇦🇺 Australia</span>
+                      <span style="font-size:13px; color:var(--text-muted);">134K</span>
+                    </div>
+                    <div class="bar-mini"><div class="bar-mini-fill" style="width:20%"></div></div>
+                  </div>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                      <span style="font-size:13px; font-weight:600;">🇩🇪 Germany</span>
+                      <span style="font-size:13px; color:var(--text-muted);">87K</span>
+                    </div>
+                    <div class="bar-mini"><div class="bar-mini-fill" style="width:13%"></div></div>
+                  </div>
+                  <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                      <span style="font-size:13px; font-weight:600;">🇫🇷 France</span>
+                      <span style="font-size:13px; color:var(--text-muted);">71K</span>
+                    </div>
+                    <div class="bar-mini"><div class="bar-mini-fill" style="width:10%"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TOP CONTENT TABLE -->
+          <div class="table-card">
+            <div class="table-header">
+              <div class="table-header-title">🏆 Top Performing Content</div>
+              <button class="btn-secondary" onclick="navigate('content', document.querySelector('.nav-item:nth-child(3)'))">View all →</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Post</th>
+                  <th>Type</th>
+                  <th>Views</th>
+                  <th>Swipe-Ups</th>
+                  <th>Avg View</th>
+                  <th>Published</th>
+                </tr>
+              </thead>
+              <tbody id="top-content-body">
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div><!-- /dashboard -->
+
+      <!-- CONTENT LIBRARY PAGE -->
+      <div id="page-content" class="page">
+        <div class="page-content">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+            <select class="form-input" style="width:auto; padding:8px 12px; font-size:13px;">
+              <option>All types</option>
+              <option>Stories</option>
+              <option>Spotlights</option>
+              <option>Saved Stories</option>
+            </select>
+            <select class="form-input" style="width:auto; padding:8px 12px; font-size:13px;">
+              <option>Most viewed</option>
+              <option>Most recent</option>
+              <option>Most swipe-ups</option>
+            </select>
+          </div>
+          <div class="content-grid" id="content-grid"></div>
+        </div>
+      </div>
+
+      <!-- SCHEDULE PAGE -->
+      <div id="page-schedule" class="page">
+        <div class="page-content">
+          <div class="schedule-layout">
+            <div>
+              <div class="schedule-form-card">
+                <div class="form-group">
+                  <label class="form-label">Media</label>
+                  <div class="upload-zone">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Drag & drop or click to upload</div>
+                    <div class="upload-hint">MP4 · JPEG · PNG · 9:16 recommended · Max 5–300s</div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Post Type</label>
+                  <div class="post-type-selector">
+                    <div class="type-btn active" onclick="selectType(this)">
+                      <div class="type-btn-icon">📖</div>
+                      Story
+                    </div>
+                    <div class="type-btn" onclick="selectType(this)">
+                      <div class="type-btn-icon">⚡</div>
+                      Spotlight
+                    </div>
+                    <div class="type-btn" onclick="selectType(this)">
+                      <div class="type-btn-icon">🔖</div>
+                      Saved Story
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Caption <span class="char-count" id="char-count">0 / 250</span></label>
+                  <textarea class="form-input form-textarea" id="caption-input" placeholder="Write a caption..." oninput="updateCount(this)"></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Hashtags</label>
+                  <input class="form-input" type="text" placeholder="#trending #snap #viral" />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Schedule</label>
+                  <input class="form-input" type="datetime-local" />
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:4px;">
+                  <button class="btn-primary" style="flex:1;" onclick="schedulePost(false)">Schedule Post</button>
+                  <button class="btn-secondary" onclick="schedulePost(true)">Publish Now</button>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="mobile-preview">
+                <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:14px; text-transform:uppercase; letter-spacing:0.06em;">Preview</div>
+                <div class="phone-frame">
+                  <div class="phone-notch"></div>
+                  <div class="phone-screen">
+                    <div class="phone-ghost">👻</div>
+                    <div class="phone-caption" id="preview-caption">Your caption will appear here</div>
+                  </div>
+                </div>
+                <div style="margin-top:14px; font-size:11px; color:var(--text-muted); text-align:center;">
+                  9:16 · Story preview
+                </div>
+              </div>
+
+              <div class="chart-card" style="margin-top:16px;">
+                <div style="font-size:13px; font-weight:700; margin-bottom:14px;">📋 Encryption Info</div>
+                <div style="font-size:12px; color:var(--text-secondary); line-height:1.7;">
+                  <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+                    <span>Algorithm</span><span style="font-weight:600;">AES-256-CBC</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+                    <span>Key</span><span style="font-weight:600; color:var(--green);">32-byte random</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+                    <span>IV</span><span style="font-weight:600; color:var(--green);">16-byte random</span>
+                  </div>
+                  <div style="display:flex; justify-content:space-between; padding:6px 0;">
+                    <span>Library</span><span style="font-weight:600;">cryptography (Python)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDULED QUEUE PAGE -->
+      <div id="page-scheduled" class="page">
+        <div class="page-content">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <div>
+              <div style="font-size:14px; font-weight:700;">Upcoming Posts</div>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Background worker polls every 60 seconds</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--green);">
+              <div style="width:8px; height:8px; border-radius:50%; background:var(--green);"></div>
+              Scheduler running
+            </div>
+          </div>
+          <div class="queue-list" id="queue-list"></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS PAGE -->
+      <div id="page-settings" class="page">
+        <div class="page-content">
+          <div class="settings-grid">
+            <div class="settings-card">
+              <div class="settings-card-title">🔗 Connected Profile</div>
+              <div class="settings-row">
+                <div class="settings-label">Profile Name</div>
+                <div class="settings-value">Official Channel</div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Snapchat Handle</div>
+                <div class="settings-value">@olivia_snap</div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Profile Type</div>
+                <div class="settings-value">Public Profile</div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Token Status</div>
+                <div style="display:flex; align-items:center; gap:5px; font-size:13px; color:var(--green); font-weight:600;">
+                  <div style="width:7px; height:7px; border-radius:50%; background:var(--green);"></div>
+                  Active · refreshes auto
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">OAuth Scope</div>
+                <div class="settings-value">snapchat-marketing-api</div>
+              </div>
+              <div style="margin-top:14px;">
+                <button class="btn-secondary" style="width:100%; justify-content:center; color:var(--red); border-color:#fca5a5;" onclick="alert('Disconnecting account...')">Disconnect Account</button>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-title">👥 Team Members</div>
+              <div class="team-member">
+                <div class="team-avatar">O</div>
+                <div>
+                  <div class="team-name">Olivia Gorom</div>
+                  <div class="team-role">livgorom@gmail.com</div>
+                </div>
+                <div class="team-status status-admin">Admin</div>
+              </div>
+              <div class="team-member">
+                <div class="team-avatar" style="background:#a5f3fc; color:#0e7490;">J</div>
+                <div>
+                  <div class="team-name">Jamie Chen</div>
+                  <div class="team-role">jamie@company.com</div>
+                </div>
+                <div class="team-status status-member">Member</div>
+              </div>
+              <div class="team-member">
+                <div class="team-avatar" style="background:#bbf7d0; color:#166534;">S</div>
+                <div>
+                  <div class="team-name">Sam Park</div>
+                  <div class="team-role">sam@company.com</div>
+                </div>
+                <div class="team-status status-member">Member</div>
+              </div>
+              <div style="margin-top:14px;">
+                <button class="btn-primary" style="width:100%; justify-content:center;" onclick="alert('Invite team member...')">+ Invite Member</button>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-title">🔔 Notifications</div>
+              <div class="settings-row">
+                <div class="settings-label">Post published</div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Post failed</div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Subscriber milestone</div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Weekly digest</div>
+                <div class="toggle" onclick="this.classList.toggle('on')"></div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Token expiry warning</div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-title">🚀 Deployment</div>
+              <div class="settings-row">
+                <div class="settings-label">Frontend</div>
+                <div class="settings-value">Vercel ✓</div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Backend</div>
+                <div class="settings-value">Railway ✓</div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">Database</div>
+                <div class="settings-value">PostgreSQL ✓</div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">SNAP_CLIENT_ID</div>
+                <div class="settings-value">••••••••••</div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">SNAP_CLIENT_SECRET</div>
+                <div class="settings-value">••••••••••</div>
+              </div>
+              <div class="settings-row">
+                <div class="settings-label">JWT_SECRET</div>
+                <div class="settings-value">••••••••••</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG — set this to your Railway backend URL
+// ─────────────────────────────────────────────
+const API = 'https://snap-dashboard-api.onrender.com/api/v1';
+
+// ── HELPERS ──
+function fmtNum(n) {
+  if (!n && n !== 0) return '—';
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return Math.round(n).toString();
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+// All API calls go through here — auto-handles 401 → logout
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(`${API}${path}`, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    ...opts,
+  });
+  if (res.status === 401) { showLogin(); return null; }
+  if (!res.ok) throw new Error(`API error ${res.status} on ${path}`);
+  return res.json();
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
+    background: type === 'success' ? '#22c55e' : '#ef4444',
+    color: '#fff', padding: '12px 20px', borderRadius: '10px',
+    fontSize: '13px', fontWeight: '600', boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+    transition: 'opacity 0.3s',
+  });
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ── STATE ──
+let currentUser = null;
+let currentProfileId = null;
+let currentDays = 7;
+let viewsChart, ageChart, typeChart;
+const gradients = [
+  'linear-gradient(135deg,#667eea,#764ba2)', 'linear-gradient(135deg,#f093fb,#f5576c)',
+  'linear-gradient(135deg,#4facfe,#00f2fe)',  'linear-gradient(135deg,#43e97b,#38f9d7)',
+  'linear-gradient(135deg,#fa709a,#fee140)',  'linear-gradient(135deg,#a18cd1,#fbc2eb)',
+  'linear-gradient(135deg,#fccb90,#d57eeb)',  'linear-gradient(135deg,#a1c4fd,#c2e9fb)',
+  'linear-gradient(135deg,#fd7043,#ffb74d)',  'linear-gradient(135deg,#e0c3fc,#8ec5fc)',
+  'linear-gradient(135deg,#96fbc4,#f9f586)',  'linear-gradient(135deg,#ff9a9e,#fad0c4)',
+];
+
+// ── AUTH ──
+function showLogin() {
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+// Clicking "Log in with Snapchat" → redirect to backend OAuth
+function doLogin() {
+  window.location.href = `${API}/auth/login`;
+}
+
+async function doLogout() {
+  if (!confirm('Sign out?')) return;
+  await apiFetch('/auth/logout', { method: 'POST' });
+  currentUser = null;
+  currentProfileId = null;
+  showLogin();
+}
+
+// On page load: check for existing session
+async function checkSession() {
+  try {
+    const user = await apiFetch('/auth/me');
+    if (!user) return; // 401 handled, login shown
+    currentUser = user;
+    // Populate user info in sidebar
+    if (user.display_name) {
+      document.querySelector('.user-name').textContent = user.display_name;
+      document.querySelector('.profile-avatar').textContent = user.display_name[0].toUpperCase();
+    }
+    if (user.email) document.querySelector('.user-email').textContent = user.email;
+
+    // Load profiles and pick first
+    const profiles = await apiFetch('/profiles');
+    if (profiles && profiles.length > 0) {
+      currentProfileId = profiles[0].id;
+      document.querySelector('.profile-name').textContent = profiles[0].name || 'My Profile';
+      document.querySelector('.profile-handle').textContent = '@' + (profiles[0].username || profiles[0].id);
+    }
+
+    showApp();
+    await loadDashboard(currentDays);
+    setTimeout(initCharts, 50);
+  } catch (e) {
+    // Backend not reachable — show login
+    console.warn('Session check failed:', e.message);
+    showLogin();
+  }
+}
+
+// ── DASHBOARD DATA ──
+async function loadDashboard(days) {
+  currentDays = days;
+  if (!currentProfileId) return;
+
+  const end = new Date().toISOString();
+  const start = new Date(Date.now() - days * 86400000).toISOString();
+  const params = new URLSearchParams({ profile_id: currentProfileId, start_time: start, end_time: end, granularity: 'DAY' });
+
+  try {
+    const stats = await apiFetch(`/analytics/stats?${params}`);
+    if (!stats) return;
+
+    // KPI cards — Snap API returns these fields
+    const s = stats.metrics || stats; // handle both wrapped and unwrapped responses
+    document.getElementById('kpi-subs').textContent   = fmtNum(s.subscriber_count ?? s.total_subscribers);
+    document.getElementById('kpi-views').textContent  = fmtNum(s.story_impressions ?? s.total_impressions);
+    document.getElementById('kpi-time').textContent   = s.avg_screen_time_millis ? ((s.avg_screen_time_millis / 1000).toFixed(1) + 's') : '—';
+    document.getElementById('kpi-swipe').textContent  = fmtNum(s.swipe_up_count ?? s.total_swipe_ups);
+    document.getElementById('kpi-shares').textContent = fmtNum(s.share_count ?? s.total_shares);
+    document.getElementById('kpi-replies').textContent= fmtNum(s.reply_count ?? s.total_replies);
+
+    // Views over time (daily series)
+    const series = stats.daily_stats || stats.timeseries || [];
+    if (series.length > 0 && viewsChart) {
+      viewsChart.data.labels = series.map(d => fmtDate(d.date || d.start_time));
+      viewsChart.data.datasets[0].data = series.map(d => d.story_impressions ?? d.impressions ?? 0);
+      viewsChart.update();
+    }
+
+    // Content type breakdown
+    if (typeChart) {
+      const byType = stats.by_content_type || {};
+      typeChart.data.datasets[0].data = [
+        byType.story ?? 0,
+        byType.spotlight ?? 0,
+        byType.saved_story ?? 0,
+        byType.lens ?? 0,
+      ];
+      typeChart.update();
+    }
+
+    // Age breakdown
+    if (ageChart && stats.audience_age) {
+      const age = stats.audience_age;
+      ageChart.data.datasets[0].data = [
+        age['13-17'] ?? 0, age['18-24'] ?? 0, age['25-34'] ?? 0, age['35-44'] ?? 0, age['45+'] ?? 0,
+      ];
+      ageChart.update();
+    }
+
+  } catch (e) {
+    console.error('Failed to load analytics:', e);
+    showToast('Could not load analytics — check backend connection', 'error');
+  }
+
+  // Top content table
+  try {
+    const content = await apiFetch(`/analytics/content?${params}`);
+    if (content) renderTopContent(content.items || content);
+  } catch (e) { console.error('Failed to load content:', e); }
+}
+
+// ── RENDER TOP CONTENT ──
+function renderTopContent(items = []) {
+  const tbody = document.getElementById('top-content-body');
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">No content data available</td></tr>';
+    return;
+  }
+  const maxViews = Math.max(...items.map(c => c.impressions ?? c.views ?? 0), 1);
+  const typeBadgeClass = { story: 'type-story', spotlight: 'type-spotlight', saved_story: 'type-saved' };
+  const typeLabel = { story: '📖 Story', spotlight: '⚡ Spotlight', saved_story: '🔖 Saved' };
+
+  tbody.innerHTML = items.slice(0, 8).map((c, i) => {
+    const views = c.impressions ?? c.views ?? 0;
+    const swipes = c.swipe_up_count ?? c.swipe_ups ?? 0;
+    const avgTime = c.avg_screen_time_millis ? (c.avg_screen_time_millis / 1000).toFixed(1) + 's' : '—';
+    const type = (c.media_type || c.type || 'story').toLowerCase().replace(' ', '_');
+    const pct = Math.round((views / maxViews) * 100);
+    const thumb = c.thumbnail_url
+      ? `<img src="${c.thumbnail_url}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;">`
+      : `<div class="content-thumb">${['🌅','🎉','🏄','🎵','🍕','🌙','🏙️','🦋'][i % 8]}</div>`;
+    return `
+      <tr>
+        <td><span class="rank-num">${i + 1}</span></td>
+        <td>
+          <div class="content-cell">
+            ${thumb}
+            <div>
+              <div class="content-info-title">${c.caption || c.title || 'Untitled'}</div>
+              <div class="content-info-date">${fmtDate(c.created_at || c.published_at)}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="type-badge ${typeBadgeClass[type] || 'type-story'}">${typeLabel[type] || type}</span></td>
+        <td>
+          <div class="stat-cell">${fmtNum(views)}</div>
+          <div class="bar-mini" style="width:80px"><div class="bar-mini-fill" style="width:${pct}%"></div></div>
+        </td>
+        <td class="stat-cell">${fmtNum(swipes)}</td>
+        <td class="stat-cell">${avgTime}</td>
+        <td style="color:var(--text-muted);font-size:12px;">${fmtDate(c.created_at || c.published_at)}</td>
+      </tr>`;
+  }).join('');
+}
+
+// ── CONTENT LIBRARY ──
+async function loadContentLibrary() {
+  const grid = document.getElementById('content-grid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">Loading...</div>';
+
+  if (!currentProfileId) return;
+
+  try {
+    const res = await apiFetch(`/analytics/content?profile_id=${currentProfileId}&limit=24`);
+    if (!res) return;
+    const items = res.items || res;
+    if (items.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">No content yet</div>';
+      return;
+    }
+    const typeClass = { story: 'type-story', spotlight: 'type-spotlight', saved_story: 'type-saved' };
+    const typeLabel = { story: 'Story', spotlight: 'Spotlight', saved_story: 'Saved Story' };
+    grid.innerHTML = items.map((c, i) => {
+      const type = (c.media_type || c.type || 'story').toLowerCase().replace(' ', '_');
+      const views = fmtNum(c.impressions ?? c.views ?? 0);
+      const thumb = c.thumbnail_url
+        ? `<img src="${c.thumbnail_url}" style="width:100%;height:100%;object-fit:cover;">`
+        : `<span style="font-size:48px;">${['🌅','🎉','🏄','🎵','🍕','🌙','🏙️','🦋','🎨','🚀','🌊','☕'][i % 12]}</span>`;
+      return `
+        <div class="content-card">
+          <div class="content-card-thumb" style="background:${gradients[i % gradients.length]}">
+            ${thumb}
+            <div class="content-card-thumb-overlay">
+              <div class="content-card-stat">👁️ ${views}</div>
+            </div>
+          </div>
+          <div class="content-card-body">
+            <div class="content-card-title">${c.caption || c.title || 'Untitled'}</div>
+            <div class="content-card-meta">
+              <span class="type-badge ${typeClass[type] || 'type-story'}" style="font-size:10px;padding:2px 7px;">${typeLabel[type] || type}</span>
+              <span>${fmtDate(c.created_at || c.published_at)}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('Failed to load content library:', e);
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--red);">Failed to load content</div>';
+  }
+}
+
+// ── SCHEDULED QUEUE ──
+async function loadQueue() {
+  const list = document.getElementById('queue-list');
+  list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Loading...</div>';
+
+  if (!currentProfileId) return;
+
+  try {
+    const res = await apiFetch(`/content/scheduled?profile_id=${currentProfileId}`);
+    if (!res) return;
+    const items = res.items || res;
+
+    // Update queue badge in nav
+    document.querySelector('.nav-badge').textContent = items.length;
+
+    if (items.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No scheduled posts</div>';
+      return;
+    }
+    const typeClass = { story: 'type-story', spotlight: 'type-spotlight', saved_story: 'type-saved' };
+    const typeLabel = { story: 'Story', spotlight: 'Spotlight', saved_story: 'Saved Story' };
+    const emojis = ['🎬','🌟','🏖️','🎤','🎵','🌙','🚀','🎉'];
+
+    list.innerHTML = items.map((p, i) => {
+      const type = (p.post_type || p.type || 'story').toLowerCase().replace(' ', '_');
+      const publishAt = new Date(p.publish_at);
+      const dateStr = publishAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const timeStr = publishAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      return `
+        <div class="queue-item" id="queue-${p.id}">
+          <div class="queue-thumb">${emojis[i % emojis.length]}</div>
+          <div class="queue-info">
+            <div class="queue-title">${p.caption || 'Scheduled post'}</div>
+            <div class="queue-meta">
+              <span class="type-badge ${typeClass[type] || 'type-story'}" style="font-size:10px;padding:2px 7px;">${typeLabel[type] || type}</span>
+              <span>Profile ${p.profile_id}</span>
+            </div>
+          </div>
+          <div class="queue-time">
+            ${timeStr}
+            <small>${dateStr}</small>
+          </div>
+          <div class="queue-cancel" onclick="cancelPost('${p.id}')" title="Cancel">✕</div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('Failed to load queue:', e);
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--red);">Failed to load queue</div>';
+  }
+}
+
+async function cancelPost(id) {
+  if (!confirm('Cancel this scheduled post?')) return;
+  try {
+    await apiFetch(`/content/scheduled/${id}`, { method: 'DELETE' });
+    document.getElementById(`queue-${id}`)?.remove();
+    showToast('Post cancelled');
+  } catch (e) {
+    showToast('Failed to cancel post', 'error');
+  }
+}
+
+// ── MEDIA UPLOAD + POST CREATION ──
+let uploadedMediaId = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.querySelector('.upload-zone');
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'video/mp4,image/jpeg,image/png';
+  fileInput.style.display = 'none';
+  document.body.appendChild(fileInput);
+
+  zone.onclick = () => fileInput.click();
+  zone.ondragover = e => { e.preventDefault(); zone.style.borderColor = 'var(--snap-yellow)'; };
+  zone.ondragleave = () => zone.style.borderColor = '';
+  zone.ondrop = e => { e.preventDefault(); zone.style.borderColor = ''; handleFileUpload(e.dataTransfer.files[0]); };
+  fileInput.onchange = () => handleFileUpload(fileInput.files[0]);
+});
+
+async function handleFileUpload(file) {
+  if (!file) return;
+  const zone = document.querySelector('.upload-zone');
+  zone.innerHTML = `<div class="upload-icon">⏳</div><div class="upload-text">Uploading ${file.name}…</div>`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('profile_id', currentProfileId);
+
+  try {
+    const res = await fetch(`${API}/content/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData, // no Content-Type header — browser sets multipart boundary
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    uploadedMediaId = data.media_id;
+    zone.innerHTML = `<div class="upload-icon">✅</div><div class="upload-text">${file.name}</div><div class="upload-hint">media_id: ${uploadedMediaId}</div>`;
+    showToast('Upload complete — media encrypted & ready');
+  } catch (e) {
+    zone.innerHTML = `<div class="upload-icon">❌</div><div class="upload-text">Upload failed</div><div class="upload-hint">${e.message}</div>`;
+    showToast('Upload failed: ' + e.message, 'error');
+  }
+}
+
+async function schedulePost(publishNow = false) {
+  if (!currentProfileId) { showToast('No profile connected', 'error'); return; }
+
+  const activeTypeBtn = document.querySelector('.type-btn.active');
+  const postTypeMap = { '📖\n      Story': 'story', '⚡\n      Spotlight': 'spotlight', '🔖\n      Saved Story': 'saved_story' };
+  const postType = activeTypeBtn ? (activeTypeBtn.textContent.includes('Spotlight') ? 'spotlight' : activeTypeBtn.textContent.includes('Saved') ? 'saved_story' : 'story') : 'story';
+  const caption = document.getElementById('caption-input').value;
+  const hashtagInput = document.querySelector('.schedule-form-card input[placeholder*="hashtag"]');
+  const hashtags = hashtagInput ? hashtagInput.value.split(/\s+/).filter(h => h.startsWith('#')) : [];
+  const datetimeInput = document.querySelector('.schedule-form-card input[type="datetime-local"]');
+
+  if (!uploadedMediaId) { showToast('Please upload media first', 'error'); return; }
+  if (!publishNow && !datetimeInput?.value) { showToast('Please pick a date/time', 'error'); return; }
+
+  const endpoint = publishNow ? `/content/${postType.replace('_','-')}` : '/content/schedule';
+  const body = publishNow
+    ? { profile_id: currentProfileId, media_id: uploadedMediaId, caption, hashtags }
+    : { profile_id: currentProfileId, post_type: postType, media_id: uploadedMediaId, caption, hashtags, publish_at: new Date(datetimeInput.value).toISOString() };
+
+  try {
+    await apiFetch(endpoint, { method: 'POST', body: JSON.stringify(body) });
+    showToast(publishNow ? 'Published! 🎉' : 'Scheduled! ✅');
+    if (!publishNow) navigate('scheduled', document.querySelector('.nav-item:nth-child(6)'));
+  } catch (e) {
+    showToast('Failed: ' + e.message, 'error');
+  }
+}
+
+// ── CHARTS ──
+function initCharts() {
+  const ctx1 = document.getElementById('viewsChart').getContext('2d');
+  viewsChart = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Story Views',
+        data: [],
+        borderColor: '#FFFC00',
+        backgroundColor: 'rgba(255,252,0,0.08)',
+        borderWidth: 2.5, fill: true, tension: 0.4,
+        pointBackgroundColor: '#FFFC00', pointBorderColor: '#fff',
+        pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#999' } },
+        y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 }, color: '#999', callback: v => fmtNum(v) } }
+      }
+    }
+  });
+
+  const ctx2 = document.getElementById('ageChart').getContext('2d');
+  ageChart = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: ['13–17', '18–24', '25–34', '35–44', '45+'],
+      datasets: [{ data: [0, 0, 0, 0, 0], backgroundColor: ['#FFFC00','#FFC107','#FF9800','#FF5722','#E91E63'], borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: { responsive: true, cutout: '68%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } } } }
+  });
+
+  const ctx3 = document.getElementById('typeChart').getContext('2d');
+  typeChart = new Chart(ctx3, {
+    type: 'bar',
+    data: {
+      labels: ['Stories', 'Spotlight', 'Saved Stories', 'Lenses'],
+      datasets: [{ data: [0, 0, 0, 0], backgroundColor: ['#FFFC00','#FFC107','#22c55e','#a855f7'], borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 12 }, color: '#666' } },
+        y: { grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 }, color: '#999', callback: v => fmtNum(v) } }
+      }
+    }
+  });
+
+  // Now fetch real data to populate them
+  loadDashboard(currentDays);
+}
+
+// ── DATE RANGE ──
+async function setRange(days, btn) {
+  document.querySelectorAll('#date-range-tabs .date-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const subtitles = { 7: 'Daily story views · last 7 days', 30: 'Daily story views · last 30 days', 90: 'Daily story views · last 90 days' };
+  document.getElementById('views-subtitle').textContent = subtitles[days];
+  await loadDashboard(days);
+}
+
+// ── NAVIGATION ──
+const pageTitles = {
+  dashboard: '📊 Dashboard',
+  content: '🎬 Content Library',
+  schedule: '✏️ Create Post',
+  scheduled: '🗓️ Scheduled Queue',
+  settings: '⚙️ Settings',
+};
+
+function navigate(page, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('topbar-title').textContent = pageTitles[page];
+  document.getElementById('date-range-tabs').style.display = page === 'dashboard' ? 'flex' : 'none';
+
+  // Lazy-load data when switching tabs
+  if (page === 'content') loadContentLibrary();
+  if (page === 'scheduled') loadQueue();
+}
+
+// ── POST TYPE SELECT ──
+function selectType(btn) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── CAPTION PREVIEW ──
+function updateCount(el) {
+  document.getElementById('char-count').textContent = `${el.value.length} / 250`;
+  document.getElementById('preview-caption').textContent = el.value || 'Your caption will appear here';
+}
+
+// ── BOOT ──
+window.addEventListener('DOMContentLoaded', checkSession);
+</script>
+</body>
+</html>
