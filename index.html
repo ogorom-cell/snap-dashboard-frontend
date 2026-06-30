@@ -1318,32 +1318,45 @@ async function doLogout() {
 
 // On page load: check for existing session
 async function checkSession() {
+  // Only auth/me failure should send user to login — data errors must not
+  let user;
   try {
-    const user = await apiFetch('/auth/me');
-    if (!user) return; // 401 handled, login shown
-    currentUser = user;
-    // Populate user info in sidebar
-    if (user.display_name) {
-      document.querySelector('.user-name').textContent = user.display_name;
-      document.querySelector('.profile-avatar').textContent = user.display_name[0].toUpperCase();
-    }
-    if (user.email) document.querySelector('.user-email').textContent = user.email;
+    user = await apiFetch('/auth/me');
+  } catch (e) {
+    console.warn('Auth check failed:', e.message);
+    showLogin();
+    return;
+  }
+  if (!user) return; // 401 already handled by apiFetch → showLogin
 
-    // Load profiles and pick first
+  currentUser = user;
+  if (user.display_name) {
+    document.querySelector('.user-name').textContent = user.display_name;
+    document.querySelector('.profile-avatar').textContent = user.display_name[0].toUpperCase();
+  }
+  if (user.email) document.querySelector('.user-email').textContent = user.email;
+
+  // Show the app immediately — data loads happen in the background
+  showApp();
+
+  // Load profiles gracefully (may fail if Snap API not yet allowlisted)
+  try {
     const profiles = await apiFetch('/profiles');
     if (profiles && profiles.length > 0) {
       currentProfileId = profiles[0].id;
       document.querySelector('.profile-name').textContent = profiles[0].name || 'My Profile';
       document.querySelector('.profile-handle').textContent = '@' + (profiles[0].username || profiles[0].id);
     }
+  } catch (e) {
+    console.warn('Could not load profiles:', e.message);
+  }
 
-    showApp();
+  // Load dashboard data gracefully
+  try {
     await loadDashboard(currentDays);
     setTimeout(initCharts, 50);
   } catch (e) {
-    // Backend not reachable — show login
-    console.warn('Session check failed:', e.message);
-    showLogin();
+    console.warn('Could not load dashboard data:', e.message);
   }
 }
 
